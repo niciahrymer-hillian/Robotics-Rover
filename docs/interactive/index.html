@@ -1,0 +1,766 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Robotics Rover &mdash; Interactive Tour</title>
+<style>
+  :root { --bg:#0e1116; --accent:#94a3b8; --accent-deep:#64748B; --panel:#0000002e;
+          --text:#e6e6e6; --muted:#9aa0a6; --good:#4ade80; --bad:#f87171; --warn:#fbbf24; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.55}
+  header{padding:18px 24px;border-bottom:1px solid #ffffff14}
+  header h1{margin:0;font-size:20px;color:var(--accent)}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  header .persist-note{margin-top:4px;font-size:11px;color:var(--muted);opacity:.8}
+  .badge{display:inline-block;background:var(--accent-deep);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px}
+  .pills{display:flex;gap:6px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid #ffffff14}
+  .pill{font-size:12px;padding:4px 10px;border:1px solid #ffffff22;border-radius:999px;color:var(--muted);cursor:pointer;background:transparent}
+  .pill.active{background:var(--accent);color:#0e1116;font-weight:600;border-color:var(--accent)}
+  .pill.done{border-color:var(--good);color:var(--good)}
+  .pill.tool{border-style:dashed}
+  main{display:grid;grid-template-columns:1fr 1fr;min-height:60vh}
+  @media (max-width:880px){main{grid-template-columns:1fr}.lesson{border-right:none!important;border-bottom:1px solid #ffffff14}}
+  .lesson,.practice{padding:22px 24px}
+  .lesson{border-right:1px solid #ffffff14}
+  .lesson h2{color:var(--accent);margin-top:0;font-size:18px}
+  .lesson ul{padding-left:18px}.lesson li{margin:6px 0}
+  .trap{border-left:3px solid var(--warn);background:#fbbf2410;padding:10px 12px;border-radius:4px;margin:12px 0;font-size:14px}
+  .trap b{color:var(--warn)}
+  .worked{border-left:3px solid var(--accent-deep);background:#ffffff08;padding:10px 12px;border-radius:4px;margin:12px 0;font-size:14px}
+  figure{margin:14px 0}figcaption{color:var(--muted);font-size:12px;margin-top:6px}
+  .practice h3{margin-top:0;color:var(--accent);font-size:16px}
+  .nav{display:flex;gap:10px;align-items:center;padding:14px 24px;border-top:1px solid #ffffff14}
+  button{font:inherit}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
+  button.ghost:disabled{opacity:.35;cursor:not-allowed}
+  .counter{color:var(--muted);font-size:13px;margin-left:auto}
+  .qc{margin-top:16px;border-top:1px solid #ffffff14;padding-top:14px}
+  .qc h4{margin:0 0 8px;font-size:14px;color:var(--accent)}
+  .opt{all:unset;display:flex;align-items:center;gap:8px;padding:8px 10px;margin:4px 0;border:1px solid #ffffff1a;border-radius:8px;cursor:pointer;font-size:14px}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{border-color:var(--good);background:#4ade8018}
+  .opt.wrong{border-color:var(--bad);background:#f8717118}
+  .opt[disabled]{cursor:default}
+  .explain{display:none;margin-top:8px;font-size:13px;color:var(--muted);border-left:2px solid var(--accent-deep);padding-left:10px}
+  .links{margin-top:14px;font-size:13px}
+  .links a{color:var(--accent);display:inline-block;margin:3px 0}
+  .links .kind{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-right:6px}
+  .video-card{display:flex;gap:10px;align-items:center;border:1px solid #ffffff1a;border-radius:8px;padding:8px;text-decoration:none;color:var(--text);margin-top:6px}
+  .video-card:hover{border-color:var(--accent)}
+  .video-card-thumb{width:96px;height:54px;border-radius:4px;background-size:cover;background-position:center;position:relative;flex-shrink:0}
+  .video-card-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;text-shadow:0 0 6px #000}
+  .video-card-info b{display:block;font-size:13px}
+  .video-card-info span{color:var(--muted);font-size:12px}
+  table.cheat{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+  table.cheat td,table.cheat th{border:1px solid #ffffff14;padding:6px 8px;text-align:left}
+  table.cheat th{color:var(--accent)}
+  code{background:#ffffff12;padding:1px 5px;border-radius:3px;font-family:ui-monospace,monospace;font-size:13px}
+  .quiz-wrap{padding:22px 24px;border-top:1px solid #ffffff14}
+  .q{margin-bottom:18px}.q p{font-weight:600;margin:0 0 6px}
+  #score{font-weight:700;color:var(--accent)}
+  .flash-stage{display:flex;justify-content:center;padding:18px 0;perspective:1200px}
+  .flash-card{width:min(420px,90%);height:190px;position:relative;cursor:pointer;transform-style:preserve-3d;transition:transform .45s}
+  .flash-card.flipped{transform:rotateY(180deg)}
+  .flash-face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid #ffffff22;border-radius:12px;
+              display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;font-size:16px}
+  .flash-front{background:#ffffff08;color:var(--text);font-weight:700}
+  .flash-back{background:var(--accent-deep);color:#fff;transform:rotateY(180deg);font-size:14px;font-weight:400}
+  .flash-controls{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:8px}
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .match-col{display:flex;flex-direction:column;gap:8px}
+  .match-btn{all:unset;padding:10px 12px;border:1px solid #ffffff1a;border-radius:8px;cursor:pointer;font-size:13px;text-align:left}
+  .match-btn:hover{border-color:var(--accent)}
+  .match-btn.sel{border-color:var(--accent);background:#94a3b818}
+  .match-btn.matched{border-color:var(--good);background:#4ade8018;opacity:.55;cursor:default}
+  .match-btn.wrong{border-color:var(--bad);background:#f8717118}
+  .rv-section{border:1px solid #ffffff1a;border-radius:8px;padding:14px 16px;margin-top:14px}
+  .rv-section h4{margin:0 0 8px;color:var(--accent);font-size:14px}
+  .rv-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;margin:8px 0}
+  .rv-row input[type=number]{width:70px;background:#ffffff0c;border:1px solid #ffffff22;border-radius:6px;color:var(--text);padding:4px 8px;font-family:ui-monospace,monospace;font-size:13px}
+  .rv-plot{background:#000;border-radius:6px;padding:8px}
+  .rv-plot svg{width:100%;height:auto;display:block}
+  .rv-readout{background:#000;border-radius:6px;padding:10px 12px;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#94a3b8}
+  .rv-readout b{color:var(--accent)}
+  .rv-status-good{color:var(--good)}
+  .rv-status-bad{color:var(--bad)}
+  .rv-status-warn{color:var(--warn)}
+  .report-card{border:1px solid #ffffff22;border-radius:10px;padding:20px 22px;max-width:560px}
+  .report-card h4{margin:16px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .report-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #ffffff10;font-size:14px}
+  .report-row .grade{font-weight:700}
+  .grade-A{color:var(--good)} .grade-B{color:#a3e635} .grade-C{color:var(--warn)} .grade-D,.grade-F{color:var(--bad)} .grade-dash{color:var(--muted)}
+  .report-overall{display:flex;align-items:baseline;gap:10px;margin:14px 0}
+  .report-overall .big{font-size:40px;font-weight:800}
+  #printBtn{margin-top:16px}
+  @media print{
+    header .persist-note, .pills, #nav, .report-card #printBtn{display:none!important}
+    body{background:#fff;color:#111}
+    .report-card{border-color:#ccc;max-width:none}
+    .report-row{border-bottom-color:#ddd}
+  }
+</style></head>
+<body>
+<header>
+  <h1>Robotics Rover <span class="badge">Chain K &middot; Hands-on</span></h1>
+  <p>Motor control fundamentals &rarr; power isolation &rarr; chassis &amp; sensing &rarr; control
+     loops &amp; debugging. Tune a real PD controller and watch it converge, oscillate, or diverge —
+     exactly like a real rover would — in the <b>Line-Following Control Loop Simulator</b> tab before
+     it's your actual motors doing the oscillating.</p>
+  <p class="persist-note">Progress (quick checks, quiz score, flashcards known) saves in this browser
+     only &mdash; localStorage, not an account. Clearing site data or switching browsers resets it.</p>
+</header>
+
+<div class="pills" id="pills"></div>
+
+<main>
+  <section class="lesson" id="lesson"></section>
+  <section class="practice" id="practice"></section>
+</main>
+
+<div class="nav" id="nav">
+  <button class="ghost" id="prev">&larr; Previous</button>
+  <button class="ghost" id="next">Next &rarr;</button>
+  <span class="counter" id="counter"></span>
+</div>
+
+<div class="quiz-wrap" id="quizWrap" style="display:none">
+  <h3 style="color:var(--accent);margin-top:0">Check Your Understanding</h3>
+  <div id="quiz"></div>
+  <p>Score: <span id="score">0</span> / <span id="total"></span></p>
+</div>
+
+<div class="quiz-wrap" id="toolWrap" style="display:none"></div>
+
+<script>
+const LESSONS = [
+{
+  short:"Motor control fundamentals",
+  title:"H-bridges, PWM, and choosing a driver IC",
+  body:`<p>Every other build in this chain reads the world or displays to it. This one acts on it —
+  and a motor is a fundamentally different load than an LED or a sensor: it draws far more current, and
+  a microcontroller pin can't drive it directly without frying itself.</p>
+  <ul><li>An <b>H-bridge</b> is four switches arranged so current can flow through a motor in either
+  direction. A low-current logic signal from the microcontroller controls those switches, letting it
+  spin a high-current motor forward, backward, or stop — and reverse it electronically, never by
+  physically swapping wires.</li>
+  <li><b>PWM</b> (pulse-width modulation) rapidly switches the drive signal on and off; the duty cycle
+  (percentage of time it's on) controls the effective average voltage the motor sees — real speed
+  control, with no analog voltage regulator needed.</li>
+  <li><b>Driver IC choice matters</b>: a TB6612FNG (MOSFET-based) has a much lower voltage drop than an
+  older L298N, so it wastes less power as heat and doesn't need a heatsink under normal load — the
+  better default pick for a new build.</li>
+  <li>Motors draw <b>far more current stalled</b> (blocked from turning) than running freely — size the
+  driver and battery for stall current, not typical running current.</li></ul>
+  <div class="trap"><b>The trap — a listed Common Mistake:</b> sizing a driver board or battery for a
+  motor's typical running current instead of its much higher stall current. A motor that draws 200mA
+  free-running can draw well over 1A stalled — exactly the moment a load gets stuck or climbs an
+  obstacle, which is precisely when you can't afford the driver to fail.</div>
+  <div class="worked"><b>Worked:</b> an L298N's roughly 1.4V drop per channel gets wasted as heat at
+  real motor currents, which is exactly why it needs a heatsink under load — a TB6612FNG's much lower
+  drop is the concrete, measurable reason it runs cooler, not just a marketing claim.</div>`,
+  practice:`<h3>Practice — before wiring anything</h3>
+  <ol><li>Look up your specific motors' stall current (not just their "rated" or typical current) and
+  confirm your chosen driver board is rated well above it.</li></ol>`,
+  quick:{ q:"Why should a motor driver and battery be sized for a motor's stall current, not its typical running current?",
+    choices:["A motor draws far more current when stalled (blocked from turning) than when running freely — exactly the moment you can least afford the driver to fail","Stall current and running current are always identical for DC motors","Stall current only matters for AC motors, never DC motors used in rovers","Sizing for running current always provides more safety margin than sizing for stall current"],
+    a:0, ex:"Stall current can be several times higher than free-running current. A driver sized only for typical draw can fail exactly when a wheel gets stuck or climbs an obstacle." },
+  links:[
+    {type:"watch", vid:"JPPTRj0KWbg", channel:"DroneBot Workshop", label:"TB6612FNG H-Bridge Motor Controller — Better than L298N?", url:"https://www.youtube.com/watch?v=JPPTRj0KWbg"}
+  ]
+},
+{
+  short:"Power isolation",
+  title:"Why motors need their own battery, sharing only ground",
+  body:`<p>This single wiring decision prevents the single most common rover failure — and understanding
+  exactly <i>why</i> it works is more useful than just following the rule.</p>
+  <ul><li>A motor's start-up current is a real, sudden spike. If the motor and the microcontroller share
+  the same battery or regulator, that spike <b>sags the shared voltage rail</b> — and if it drops below
+  the microcontroller's minimum operating voltage, the microcontroller doesn't just glitch, it actually
+  <b>resets</b> (a brownout).</li>
+  <li>The fix is <b>two separate power domains</b>: the motor battery powers only the driver's motor-side
+  terminals, a separate supply powers the logic side, and the two rails meet <i>only</i> at ground — a
+  shared reference so signals between them still make sense, never sharing the actual power rail.</li>
+  <li><b>Flyback diodes</b> protect against a related but different problem: when a motor's current is
+  suddenly interrupted (switching direction, turning off), the motor's own inductance generates a
+  voltage spike (back-EMF) that can exceed the driver's rated voltage. Most breakout boards already
+  include these; bare H-bridge ICs may not.</li></ul>
+  <div class="trap"><b>The trap — a listed Common Mistake:</b> a driver board with no flyback diodes,
+  letting motor back-EMF damage the driver over time — worth explicitly checking for on a bare IC,
+  since it's easy to assume every driver includes this protection.</div>
+  <div class="worked"><b>Worked:</b> the exact "#1 rover failure" — motor start-up current brownout-ing
+  the microcontroller mid-command — is prevented entirely by the two-power-domain wiring, with zero
+  additional code or firmware changes needed.</div>`,
+  practice:`<h3>Practice — verify before powering up</h3>
+  <ol><li>Confirm your wiring has exactly one ground connection shared between the motor battery's
+  circuit and the logic supply's circuit — and no other shared connection between them.</li></ol>`,
+  quick:{ q:"Why does sharing a single battery between motors and logic cause the microcontroller to reset, specifically — not just behave a little oddly?",
+    choices:["A motor's start-up current spike sags the shared voltage rail below the microcontroller's minimum operating voltage, triggering an actual reset (brownout)","Motors and microcontrollers are electrically incompatible and cannot share a ground under any circumstances","Sharing a battery causes the microcontroller's firmware to corrupt itself","The microcontroller intentionally resets to protect itself whenever a motor is commanded to move"],
+    a:0, ex:"This is a specific, checkable mechanism — a voltage sag below a real threshold — not vague interference. It's exactly why the fix is a separate supply, not a software workaround." },
+  links:[
+    {type:"read", label:"Why Do Robots Need Separate Power for Motors and Logic?", url:"https://techietory.com/robotics/why-robots-need-separate-power-motors-logic/"}
+  ]
+},
+{
+  short:"Chassis & sensing",
+  title:"Chassis assembly and sensing for line-following",
+  body:`<p>The mechanical build and the sensors that feed the control loop both deserve real attention —
+  a great control algorithm can't fix a chassis that binds or a sensor mounted at the wrong height.</p>
+  <ul><li><b>Chassis tradeoffs</b>: a chassis with metal gearboxes holds up far better over repeated use
+  than an all-plastic one, which can strip teeth under load — worth the small extra cost if the rover
+  will actually be driven regularly rather than just demoed once.</li>
+  <li>An <b>IR line sensor</b> emits infrared light and measures how much bounces back. A light surface
+  (the background) reflects far more IR back than a dark line does — that reflectance difference is
+  the actual signal a line-follower reads, not a literal "camera" seeing the line.</li>
+  <li><b>Sensor mounting height matters</b>: typically 5-10mm above the surface. Too high and the
+  reflected signal is weak and noisy; too low narrows the effective field of view.</li>
+  <li>An <b>ultrasonic distance sensor</b> is a common addition (or alternative) for obstacle-avoidance
+  behavior, measuring distance instead of line position.</li></ul>
+  <div class="trap"><b>The trap — from the Hardware Buying Guide:</b> buying the cheapest all-plastic
+  gearbox kit to save a few dollars. It's the same rover on day one, but plastic gear teeth strip under
+  real, repeated load in a way a metal gearbox simply doesn't — a cost that shows up weeks later, not
+  at checkout.</div>
+  <div class="worked"><b>Worked:</b> the same IR sensor mounted at the recommended 5-10mm height gives a
+  clean, reliable high/low distinction between line and background; mounted too high, the same sensor's
+  reading gets noisy and inconsistent — a mounting problem, not a sensor-quality problem.</div>`,
+  practice:`<h3>Practice — Line-Following Control Loop Simulator</h3>
+  <ol><li>Open the <b>Line-Following Control Loop Simulator</b> tab. Before touching Kp/Kd, notice that
+  the "sensor reading" this simulator uses is exactly the lateral offset a real IR sensor array would
+  estimate.</li></ol>`,
+  quick:{ q:"Why does an IR line sensor read differently over a white surface than over a black line?",
+    choices:["A light surface reflects far more emitted IR light back to the sensor than a dark line does — that reflectance difference is the actual signal","The sensor changes color itself when passing over different surfaces","IR sensors can only detect motion, not surface color or reflectance","Black lines emit their own infrared signal that the sensor detects directly"],
+    a:0, ex:"The sensor doesn't 'see' the line visually — it measures how much of its own emitted IR light bounces back, and a dark line simply reflects much less of it than the lighter background." },
+  links:[
+    {type:"watch", vid:"Q4UmbjXwoZ4", channel:"BMonster Laboratory", label:"Complete Assembly And Review Of A DIY Robot Smart Car Chassis Kit", url:"https://www.youtube.com/watch?v=Q4UmbjXwoZ4"}
+  ]
+},
+{
+  short:"Control loops & debugging",
+  title:"Closing the loop: PD control, and diagnosing driver failures",
+  body:`<p>This is the actual point of a rover versus every sensor-only project in this chain: reading a
+  value and <i>acting</i> on it, continuously, in real time.</p>
+  <ul><li>The loop's structure: read the sensor error (how far off the line the rover is), compute a
+  correction, apply it to the motor speeds (turn back toward the line), repeat — the fundamental shape
+  of any closed-loop control system, not just this one.</li>
+  <li>A <b>proportional (P)</b> correction alone — turn back harder the further off you are — tends to
+  overshoot and oscillate, sometimes with growing swings rather than settling down.</li>
+  <li>Adding a <b>derivative (D)</b> term — react to <i>how fast</i> the error is changing, not just how
+  large it is — damps that oscillation out, letting the rover settle onto the line smoothly instead of
+  swinging past it repeatedly.</li>
+  <li><b>Too-high Kp even with damping</b> still overshoots and oscillates; <b>too-low Kp</b> is
+  sluggish and drifts further off the line before correcting at all — real tuning, not a single "right"
+  number.</li></ul>
+  <div class="trap"><b>The trap — a listed Common Mistake:</b> setting Kp too high with no damping (Kd),
+  causing the rover to oscillate wildly or lose the line entirely instead of tracking it smoothly. The
+  fix is rarely "just lower Kp" alone — adding real damping (Kd) is usually what actually stabilizes
+  it.</div>
+  <div class="worked"><b>Worked — three real regimes:</b> Kp=0.15 with no damping grows into wider and
+  wider oscillation over time; the same Kp=0.15 with Kd=0.6 converges cleanly onto the line; pushing
+  Kp up to 1.2 (even with that same damping) diverges outright. Try exactly these three in the
+  Simulator.</div>`,
+  practice:`<h3>Practice — Line-Following Control Loop Simulator</h3>
+  <ol><li>Run all three regimes from the worked example above and watch the lateral-offset plot behave
+  exactly as described — converging, oscillating, or diverging.</li></ol>`,
+  quick:{ q:"A rover is oscillating with growing swings instead of settling onto the line. What's the most likely effective fix?",
+    choices:["Increase the derivative gain (Kd) to add real damping, rather than just lowering Kp arbitrarily","Increase Kp further to correct more aggressively","Remove the sensor and drive in a straight line instead","Increase the rover's forward speed to pass the line faster"],
+    a:0, ex:"Growing oscillation is a classic sign of insufficient damping, not necessarily too much proportional gain. Adding a real derivative term (Kd) is usually what actually stabilizes it, rather than blindly reducing Kp." },
+  links:[
+    {type:"watch", vid:"QoNkpnpvEqc", channel:"Shyam Ravi", label:"I made a SUPER FAST Line Follower Robot Using PID!", url:"https://www.youtube.com/watch?v=QoNkpnpvEqc"}
+  ]
+}
+];
+
+const QUIZ = [
+ {q:"What does an H-bridge actually let a microcontroller do to a motor that it couldn't do by driving it directly?",
+  o:["Control a high-current motor's direction and speed using only a low-current logic signal, and reverse it electronically instead of physically swapping wires","Reduce a motor's total power consumption to zero","Convert AC power into DC power for the motor","Allow the motor to run without any external power supply at all"],c:0,
+  ex:"A microcontroller pin can only source a few mA — nowhere near enough to drive a motor directly. An H-bridge's four switches let that small signal control a much larger current, in either direction."},
+ {q:"Why should a driver board and battery be sized for a motor's stall current rather than its typical running current?",
+  o:["A motor draws far more current when stalled than when running freely — exactly the situation where a driver rated only for typical current is most likely to fail","Stall current is always lower than running current for a DC motor","Stall current only applies to motors larger than what a rover would use","Running current is impossible to measure, so stall current is used as a substitute"],c:0,
+  ex:"Stall current can be multiple times higher than free-running current — precisely the moment (a stuck wheel, an obstacle) when a driver rated only for typical draw is most likely to fail."},
+ {q:"Why does sharing one battery between motors and logic cause the microcontroller to actually reset, not just behave a little oddly?",
+  o:["A motor's start-up current spike sags the shared voltage rail below the microcontroller's minimum operating voltage, triggering a real brownout reset","The shared battery causes a short circuit every time a motor starts","Microcontrollers are physically incapable of being powered from the same source as a motor under any circumstances","The reset is caused by electromagnetic interference from the motor, unrelated to voltage"],c:0,
+  ex:"This is a specific, checkable voltage-sag mechanism, not vague interference — which is exactly why two separate power domains, not a software fix, is the actual solution."},
+ {q:"What's the real signal an IR line sensor is reading when it distinguishes a line from the background?",
+  o:["How much of the sensor's own emitted infrared light reflects back — a light surface reflects far more than a dark line","The visible color of the surface, similar to how a camera sees color","Heat radiating from the surface","Sound waves bouncing off the surface"],c:0,
+  ex:"The sensor emits IR and measures the reflection — it's a reflectance measurement, not a color camera, which is why mounting height and surface contrast both matter so much for a reliable reading."},
+ {q:"Why does adding a derivative (D) term to a proportional-only (P) line-following controller typically help?",
+  o:["It reacts to how fast the error is changing, not just how large it is, which damps oscillation that a P-only controller tends to produce","It removes the need for a motor driver entirely","It only affects the rover's top speed, not its stability","D terms are only relevant for ultrasonic sensors, never IR line sensors"],c:0,
+  ex:"A P-only controller corrects based on how far off the line you are, which tends to overshoot. A D term adds a damping effect based on the rate of change of that error, which is what actually settles the oscillation down."},
+ {q:"A rover's lateral offset from the line grows into wider and wider swings over successive control-loop ticks instead of settling down. What does this pattern most directly indicate?",
+  o:["Insufficient damping (too low a Kd relative to Kp) — the classic signature of an underdamped or unstable control loop","A completely dead motor driver with no output at all","A line sensor that is physically disconnected","A chassis with a stripped gearbox"],c:0,
+  ex:"Growing oscillation, specifically, is the signature of insufficient damping in a feedback loop — a dead driver or disconnected sensor would show no response at all, not a growing oscillation."},
+ {q:"Why does the Hardware Buying Guide recommend a chassis with metal gearboxes over an all-plastic one, even though both work identically on day one?",
+  o:["Plastic gear teeth strip under real, repeated load in a way metal gearboxes don't — a durability cost that shows up weeks later, not at checkout","All-plastic gearboxes are actually stronger than metal ones","Metal gearboxes are required for the motor driver to function at all","Plastic gearboxes are illegal to use in a rover build"],c:0,
+  ex:"The failure mode here is specifically about durability under repeated real use, not initial functionality — both chassis types work fine for a first demo, which is exactly why the tradeoff is easy to miss until later."}
+];
+
+/* Key terms — pulled from the bolded/code terms across the four lessons above. */
+const KEY_TERMS = [
+  ["H-bridge", "Four switches letting a low-current logic signal control a high-current motor's direction, reversing it electronically."],
+  ["PWM speed control", "Rapidly switching the drive signal; duty cycle sets the effective average voltage the motor sees."],
+  ["TB6612FNG vs L298N", "TB6612FNG (MOSFET-based) has much lower voltage drop, runs cooler, and needs no heatsink — the better default driver pick."],
+  ["Stall current", "Far higher than typical running current — size the driver and battery for this, not typical draw."],
+  ["Power isolation (two domains, one ground)", "Motor battery and logic supply meet only at ground, never at the power rail."],
+  ["Brownout", "A real reset caused when a shared voltage rail sags below the microcontroller's minimum operating voltage."],
+  ["Flyback diode / back-EMF", "Protects the driver from the voltage spike a motor's inductance generates when its current is suddenly interrupted."],
+  ["Metal vs plastic gearbox", "Metal gearboxes hold up under repeated real load; plastic teeth can strip — a durability cost, not a day-one difference."],
+  ["IR line sensor reflectance", "Measures how much emitted IR bounces back — a light background reflects far more than a dark line."],
+  ["Sensor mounting height", "Typically 5-10mm above the surface — too high is weak/noisy, too low narrows the field of view."],
+  ["Ultrasonic distance sensor", "Measures distance for obstacle-avoidance behavior, as an alternative or addition to line-following."],
+  ["Closed-loop control", "Read the error, compute a correction, act on it, repeat — the fundamental shape of any real-time control system."],
+  ["Proportional (P) term", "Corrects harder the further off-target the error is — alone, tends to overshoot and oscillate."],
+  ["Derivative (D) term", "Reacts to how fast the error is changing, damping the oscillation a P-only controller produces."],
+  ["Underdamped oscillation", "Growing or sustained swings instead of settling — the signature of insufficient damping (low Kd relative to Kp)."],
+  ["Overshoot from excessive Kp", "Too-high proportional gain overshoots and oscillates even with real damping present."],
+  ["Sluggish response from low Kp", "Too-low proportional gain drifts further off-target before correcting at all."]
+];
+
+const STATE_KEY = 'chainK_roboticsRover_v1';
+function loadState(){
+  try{ const raw = localStorage.getItem(STATE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STATE_KEY, JSON.stringify({
+      answered, quizScore: score, quizDone: [...done], fcKnown: [...fcKnown],
+      popLastScore, popLastTotal, popAttemptsCount, matchBestAttempts,
+      rvKp, rvKd, rvY0
+    }));
+  }catch(e){ /* storage unavailable — progress just won't persist this session */ }
+}
+const SAVED = loadState();
+
+let idx = 0;
+const answered = SAVED && Array.isArray(SAVED.answered) && SAVED.answered.length === LESSONS.length
+  ? SAVED.answered.slice() : new Array(LESSONS.length).fill(false);
+
+function videoCard(l){
+  return `<a class="video-card" href="${l.url}" target="_blank" rel="noopener">
+    <span class="video-card-thumb" style="background-image:url('https://img.youtube.com/vi/${l.vid}/hqdefault.jpg')">
+      <span class="video-card-play">&#9658;</span></span>
+    <span class="video-card-info"><b>${l.label}</b><span>${l.channel} &middot; opens on YouTube</span></span></a>`;
+}
+function renderLinks(links){
+  if(!links || !links.length) return '';
+  const rows = links.map(l => l.type === 'watch'
+    ? videoCard(l)
+    : `<div><span class="kind">${l.type}</span><a href="${l.url}" target="_blank" rel="noopener">${l.label}</a></div>`).join('');
+  return `<div class="links"><h4 style="margin:0 0 6px;font-size:14px;color:var(--accent)">Continue learning</h4>${rows}</div>`;
+}
+function renderQuick(i){
+  const q = LESSONS[i].quick;
+  if(!q) return '';
+  const isDone = answered[i];
+  return `<div class="qc"><h4>Quick check</h4><p style="margin:0 0 6px;font-size:14px">${q.q}</p>
+    <div id="qcopts">${q.choices.map((c,ci)=>`<button class="opt ${isDone && ci===q.a?'correct':''}" data-ci="${ci}" ${isDone?'disabled':''}>${c}</button>`).join('')}</div>
+    <div class="explain" id="qcex" style="${isDone?'display:block':''}">${isDone?q.ex:''}</div></div>`;
+}
+
+const TOOLS = ['Flashcards','Match','Pop Quiz','Cheat Sheet','Line-Following Control Loop Simulator','Report Card'];
+function pillsHTML(){
+  const lessonPills = LESSONS.map((l,i)=>
+    `<button class="pill ${i===idx?'active':''} ${answered[i]?'done':''}" data-i="${i}">${i+1}. ${l.short}</button>`).join('');
+  const quizPill = `<button class="pill ${idx===LESSONS.length?'active':''}" data-i="${LESSONS.length}">Quiz</button>`;
+  const toolPills = TOOLS.map((t,ti)=>{
+    const i = LESSONS.length + 1 + ti;
+    return `<button class="pill tool ${i===idx?'active':''}" data-i="${i}">${t}</button>`;
+  }).join('');
+  return lessonPills + quizPill + toolPills;
+}
+function render(){
+  document.getElementById('pills').innerHTML = pillsHTML();
+  const isQuiz = idx === LESSONS.length;
+  const isTool = idx > LESSONS.length;
+  document.querySelector('main').style.display = (isQuiz || isTool) ? 'none' : 'grid';
+  document.getElementById('quizWrap').style.display = isQuiz ? 'block' : 'none';
+  document.getElementById('toolWrap').style.display = isTool ? 'block' : 'none';
+  document.getElementById('nav').style.display = isTool ? 'none' : 'flex';
+  if(isTool){ renderTool(idx - LESSONS.length - 1); return; }
+  if(isQuiz){ document.getElementById('counter').textContent = 'Final quiz'; renderQuiz(); syncNav(); return; }
+  const L = LESSONS[idx];
+  document.getElementById('lesson').innerHTML =
+    `<h2>${idx+1}. ${L.title}</h2>${L.body}${renderLinks(L.links)}${renderQuick(idx)}`;
+  document.getElementById('practice').innerHTML = L.practice;
+  document.getElementById('counter').textContent = `Lesson ${idx+1} of ${LESSONS.length}`;
+  const opts = document.getElementById('qcopts');
+  if(opts) opts.addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if(!b || b.disabled) return;
+    const q = LESSONS[idx].quick, pick = +b.dataset.ci;
+    [...opts.children].forEach((el,ci)=>{ el.disabled = true;
+      if(ci===q.a) el.classList.add('correct'); else if(ci===pick) el.classList.add('wrong'); });
+    const ex = document.getElementById('qcex'); ex.textContent = q.ex; ex.style.display='block';
+    answered[idx] = true;
+    saveState();
+    syncNav(); render2Pills();
+  });
+  syncNav();
+}
+function render2Pills(){
+  document.querySelectorAll('.pill').forEach((p,i)=>{ if(answered[i]) p.classList.add('done'); });
+}
+function syncNav(){
+  document.getElementById('prev').disabled = idx === 0;
+  const n = document.getElementById('next');
+  const gated = idx < LESSONS.length && !answered[idx];
+  n.disabled = idx > LESSONS.length - 1 || gated;
+  n.textContent = gated ? 'Answer the quick check to continue' : 'Next →';
+}
+
+let score = SAVED && Number.isFinite(SAVED.quizScore) ? SAVED.quizScore : 0;
+let done = new Set(SAVED && Array.isArray(SAVED.quizDone) ? SAVED.quizDone : []);
+function renderQuiz(){
+  document.getElementById('total').textContent = QUIZ.length;
+  document.getElementById('quiz').innerHTML = QUIZ.map((it,qi)=>{
+    const isDone = done.has(qi);
+    return `<div class="q"><p>${qi+1}. ${it.q}</p>
+      <div data-q="${qi}">${it.o.map((o,oi)=>`<button class="opt ${isDone && oi===it.c?'correct':''}" data-q="${qi}" data-o="${oi}" ${isDone?'disabled':''}>${o}</button>`).join('')}</div>
+      <div class="explain" id="qex${qi}" style="${isDone?'display:block':''}">${isDone?it.ex:''}</div></div>`;
+  }).join('');
+  document.getElementById('score').textContent = score;
+}
+document.getElementById('quiz').addEventListener('click', e => {
+  const b = e.target.closest('.opt'); if(!b || b.disabled) return;
+  const qi = +b.dataset.q, oi = +b.dataset.o, it = QUIZ[qi];
+  if(done.has(qi)) return; done.add(qi);
+  b.parentElement.querySelectorAll('.opt').forEach((el,i)=>{ el.disabled = true;
+    if(i===it.c) el.classList.add('correct'); else if(i===oi) el.classList.add('wrong'); });
+  const ex = document.getElementById('qex'+qi); ex.textContent = it.ex; ex.style.display='block';
+  if(oi===it.c){ score++; document.getElementById('score').textContent = score; }
+  saveState();
+});
+
+function shuffled(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; }
+  return a;
+}
+function renderTool(view){
+  if(view===0) return renderFlash();
+  if(view===1) return renderMatch();
+  if(view===2) return renderPop();
+  if(view===3) return renderCheat();
+  if(view===4) return renderRoverSim();
+  if(view===5) return renderReportCard();
+}
+
+let fcIdx = 0;
+const fcKnown = new Set(SAVED && Array.isArray(SAVED.fcKnown) ? SAVED.fcKnown : []);
+function renderFlash(){
+  const t = KEY_TERMS[fcIdx];
+  document.getElementById('toolWrap').innerHTML = `
+    <h3 style="color:var(--accent);margin-top:0">Flashcards</h3>
+    <p style="color:var(--muted);font-size:13px">Click a card to flip it. ${fcKnown.size} / ${KEY_TERMS.length} marked known.</p>
+    <div class="flash-stage"><div class="flash-card" id="flashCard">
+      <div class="flash-face flash-front">${t[0]}</div>
+      <div class="flash-face flash-back">${t[1]}</div>
+    </div></div>
+    <div class="flash-controls">
+      <button class="ghost" id="fcPrev">&larr; Prev</button>
+      <span class="counter" style="margin:0 6px">${fcIdx+1} / ${KEY_TERMS.length}</span>
+      <button class="ghost" id="fcKnow">${fcKnown.has(fcIdx) ? '✓ Known' : 'Mark known'}</button>
+      <button class="ghost" id="fcNext">Next &rarr;</button>
+    </div>`;
+  document.getElementById('flashCard').onclick = () => document.getElementById('flashCard').classList.toggle('flipped');
+  document.getElementById('fcPrev').onclick = () => { fcIdx = (fcIdx - 1 + KEY_TERMS.length) % KEY_TERMS.length; renderFlash(); };
+  document.getElementById('fcNext').onclick = () => { fcIdx = (fcIdx + 1) % KEY_TERMS.length; renderFlash(); };
+  document.getElementById('fcKnow').onclick = () => {
+    if(fcKnown.has(fcIdx)) fcKnown.delete(fcIdx); else fcKnown.add(fcIdx);
+    saveState(); renderFlash();
+  };
+}
+
+let matchPairs = [], matchTermOrder = [], matchDefOrder = [], matchSel = null, matchMatched = new Set(), matchAttempts = 0;
+let matchBestAttempts = SAVED && Number.isFinite(SAVED.matchBestAttempts) ? SAVED.matchBestAttempts : null;
+function newMatchRound(){
+  const n = Math.min(8, KEY_TERMS.length);
+  const idxs = shuffled([...Array(KEY_TERMS.length).keys()]).slice(0, n);
+  matchPairs = idxs.map(i => ({ key:i, term:KEY_TERMS[i][0], def:KEY_TERMS[i][1] }));
+  matchTermOrder = shuffled(matchPairs);
+  matchDefOrder = shuffled(matchPairs);
+  matchSel = null; matchMatched = new Set(); matchAttempts = 0;
+}
+function matchBtn(p, side){
+  const isMatched = matchMatched.has(p.key);
+  const isSel = matchSel && matchSel.key === p.key && matchSel.side === side;
+  const label = side === 'term' ? p.term : p.def;
+  return `<button class="match-btn ${isMatched?'matched':''} ${isSel?'sel':''}" data-key="${p.key}" data-side="${side}" ${isMatched?'disabled':''}>${label}</button>`;
+}
+function matchStatusText(){
+  if(matchMatched.size === matchPairs.length) return `Solved in ${matchAttempts} attempts!`;
+  return `Match each term to its definition. Attempts: ${matchAttempts}`;
+}
+function renderMatch(){
+  if(!matchPairs.length) newMatchRound();
+  document.getElementById('toolWrap').innerHTML = `
+    <h3 style="color:var(--accent);margin-top:0">Match</h3>
+    <p style="color:var(--muted);font-size:13px" id="matchStatus">${matchStatusText()}</p>
+    <div class="match-grid">
+      <div class="match-col">${matchTermOrder.map(p => matchBtn(p,'term')).join('')}</div>
+      <div class="match-col">${matchDefOrder.map(p => matchBtn(p,'def')).join('')}</div>
+    </div>
+    <button class="ghost" id="matchNew" style="margin-top:14px">New round</button>`;
+  document.querySelectorAll('.match-btn').forEach(b => b.addEventListener('click', onMatchClick));
+  document.getElementById('matchNew').onclick = () => { newMatchRound(); renderMatch(); };
+}
+function onMatchClick(e){
+  const b = e.currentTarget;
+  const key = +b.dataset.key, side = b.dataset.side;
+  if(matchMatched.has(key)) return;
+  if(!matchSel || matchSel.side === side){ matchSel = { key, side }; renderMatch(); return; }
+  matchAttempts++;
+  if(matchSel.key === key){
+    matchMatched.add(key);
+    matchSel = null;
+    if(matchMatched.size === matchPairs.length){
+      if(matchBestAttempts === null || matchAttempts < matchBestAttempts) matchBestAttempts = matchAttempts;
+      saveState();
+    }
+    renderMatch();
+  } else {
+    b.classList.add('wrong');
+    const status = document.getElementById('matchStatus');
+    if(status) status.textContent = `Not quite. Attempts: ${matchAttempts}`;
+    setTimeout(() => { matchSel = null; renderMatch(); }, 500);
+  }
+}
+
+function popPool(){
+  const fromLessons = LESSONS.filter(l => l.quick).map(l => ({ q:l.quick.q, opts:l.quick.choices, correct:l.quick.a, ex:l.quick.ex }));
+  const fromQuiz = QUIZ.map(q => ({ q:q.q, opts:q.o, correct:q.c, ex:q.ex }));
+  return [...fromLessons, ...fromQuiz];
+}
+let popSet = [], popIdx = 0, popScore = 0, popDone = false;
+let popLastScore = SAVED && Number.isFinite(SAVED.popLastScore) ? SAVED.popLastScore : null;
+let popLastTotal = SAVED && Number.isFinite(SAVED.popLastTotal) ? SAVED.popLastTotal : null;
+let popAttemptsCount = SAVED && Number.isFinite(SAVED.popAttemptsCount) ? SAVED.popAttemptsCount : 0;
+function newPop(){
+  const pool = shuffled(popPool());
+  popSet = pool.slice(0, Math.min(5, pool.length));
+  popIdx = 0; popScore = 0; popDone = false;
+}
+function renderPop(){
+  if(!popSet.length) newPop();
+  if(popDone){
+    document.getElementById('toolWrap').innerHTML = `
+      <h3 style="color:var(--accent);margin-top:0">Pop Quiz</h3>
+      <p>Score: <b>${popScore} / ${popSet.length}</b></p>
+      <button class="ghost" id="popAgain">Try another 5</button>`;
+    document.getElementById('popAgain').onclick = () => { newPop(); renderPop(); };
+    return;
+  }
+  const it = popSet[popIdx];
+  document.getElementById('toolWrap').innerHTML = `
+    <h3 style="color:var(--accent);margin-top:0">Pop Quiz</h3>
+    <p style="color:var(--muted);font-size:13px">Question ${popIdx+1} of ${popSet.length} &middot; Score so far: ${popScore}</p>
+    <div class="qc"><p style="font-weight:600;font-size:14px;margin:0 0 6px">${it.q}</p>
+      <div id="popOpts">${it.opts.map((o,oi)=>`<button class="opt" data-oi="${oi}">${o}</button>`).join('')}</div>
+      <div class="explain" id="popEx"></div></div>
+    <button class="ghost" id="popNext" style="margin-top:12px;display:none">Next &rarr;</button>`;
+  document.getElementById('popOpts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if(!b || b.disabled) return;
+    const oi = +b.dataset.oi;
+    [...document.getElementById('popOpts').children].forEach((el,i) => {
+      el.disabled = true;
+      if(i===it.correct) el.classList.add('correct'); else if(i===oi) el.classList.add('wrong');
+    });
+    if(oi === it.correct) popScore++;
+    const ex = document.getElementById('popEx'); ex.textContent = it.ex; ex.style.display = 'block';
+    document.getElementById('popNext').style.display = 'inline-block';
+  });
+  document.getElementById('popNext').onclick = () => {
+    popIdx++;
+    if(popIdx >= popSet.length){
+      popDone = true;
+      popLastScore = popScore; popLastTotal = popSet.length; popAttemptsCount++;
+      saveState();
+    }
+    renderPop();
+  };
+}
+
+const CHEATSHEET = `
+  <h3 style="color:var(--accent);margin-top:0">Cheat Sheet</h3>
+  <table class="cheat">
+    <tr><th>Task / Fact</th><th>Rule</th></tr>
+    <tr><td>H-bridge</td><td>Lets a low-current logic signal control a high-current motor's direction</td></tr>
+    <tr><td>PWM</td><td>Duty cycle sets the effective average voltage → speed</td></tr>
+    <tr><td>Best default driver</td><td>TB6612FNG over L298N — lower voltage drop, runs cooler</td></tr>
+    <tr><td>Size for</td><td>Stall current, not typical running current</td></tr>
+    <tr><td>Power domains</td><td>Motor battery + logic supply, meeting ONLY at ground</td></tr>
+    <tr><td>Brownout cause</td><td>Shared rail sags below the microcontroller's minimum voltage</td></tr>
+    <tr><td>Flyback diode</td><td>Protects driver from motor back-EMF spikes</td></tr>
+    <tr><td>IR line sensor</td><td>Measures reflected IR — light background reflects more than a dark line</td></tr>
+    <tr><td>Sensor mount height</td><td>~5-10mm above the surface</td></tr>
+    <tr><td>P-only control</td><td>Tends to overshoot/oscillate</td></tr>
+    <tr><td>P+D control</td><td>Derivative term damps oscillation, converges smoothly</td></tr>
+    <tr><td>Growing oscillation</td><td>Signature of insufficient damping (low Kd relative to Kp)</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:12px;margin-top:10px">Full lesson content covers the reasoning
+     behind each row — this page is for last-minute recall, not first-time learning.</p>`;
+function renderCheat(){ document.getElementById('toolWrap').innerHTML = CHEATSHEET; }
+
+/* Line-Following Control Loop Simulator — this project's own Simulation
+   tab. A real, standard discrete PD control model: lateral offset y and
+   heading theta evolve as y += v*theta; theta -= (Kp*y + Kd*v*theta) —
+   identical to exercises/line_follow_control.py's simulate_line_follow.
+   Genuinely converges, oscillates, or diverges depending on Kp/Kd, not
+   a scripted animation. */
+const RV_V = 1.0;
+let rvKp = SAVED && Number.isFinite(SAVED.rvKp) ? SAVED.rvKp : 0.15;
+let rvKd = SAVED && Number.isFinite(SAVED.rvKd) ? SAVED.rvKd : 0.3;
+let rvY0 = SAVED && Number.isFinite(SAVED.rvY0) ? SAVED.rvY0 : 3.0;
+let rvY = rvY0, rvTheta = 0, rvTick = 0, rvHistory = [rvY0];
+
+function rvLateralErrorRate(v, theta){ return v*theta; }
+function rvPdCorrection(y, theta, v, Kp, Kd){ return Kp*y + Kd*rvLateralErrorRate(v, theta); }
+function rvStep(){
+  const correction = rvPdCorrection(rvY, rvTheta, RV_V, rvKp, rvKd);
+  const thetaNew = rvTheta - correction;
+  const yNew = rvY + RV_V*rvTheta;
+  rvY = yNew; rvTheta = thetaNew; rvTick++;
+  rvHistory.push(rvY);
+  if(rvHistory.length > 60) rvHistory.shift();
+}
+function rvHasConverged(history, threshold=0.3, window=5){
+  if(history.length < window) return false;
+  return history.slice(-window).every(v => Math.abs(v) < threshold);
+}
+function rvHasDiverged(history, bound=30){ return history.some(v => Math.abs(v) > bound); }
+function rvReset(y0){
+  rvY = y0; rvTheta = 0; rvTick = 0; rvHistory = [y0];
+}
+function rvPolyline(values, w, h, color, scaleMin, scaleMax){
+  const n = values.length;
+  if(n < 2) return '';
+  const pts = values.map((v,i) => {
+    const x = (i/(n-1)) * w;
+    const norm = (v - scaleMin) / (scaleMax - scaleMin || 1);
+    const y = h - norm*h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+}
+function rvPlotSvg(){
+  const w = 460, h = 90;
+  const vals = rvHistory;
+  const maxAbs = Math.max(3, ...vals.map(v => Math.abs(v)));
+  const zeroY = h - ((0 - (-maxAbs)) / (maxAbs - (-maxAbs))) * h;
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <rect width="${w}" height="${h}" fill="#000"/>
+    <line x1="0" y1="${zeroY.toFixed(1)}" x2="${w}" y2="${zeroY.toFixed(1)}" stroke="#334155" stroke-width="1" stroke-dasharray="3 3"/>
+    ${rvPolyline(vals, w, h, '#4ade80', -maxAbs, maxAbs)}
+  </svg>`;
+}
+function rvTrackSvg(){
+  const w = 460, h = 40;
+  const maxAbs = 8;
+  const clamped = Math.max(-maxAbs, Math.min(maxAbs, rvY));
+  const x = ((clamped + maxAbs) / (2*maxAbs)) * w;
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <rect width="${w}" height="${h}" fill="#000"/>
+    <line x1="${w/2}" y1="0" x2="${w/2}" y2="${h}" stroke="#64748B" stroke-width="2"/>
+    <circle cx="${x.toFixed(1)}" cy="${h/2}" r="6" fill="#4ade80"/>
+  </svg>`;
+}
+function rvStatus(){
+  if(rvHasDiverged(rvHistory)) return { text:'Diverging', cls:'rv-status-bad' };
+  if(rvHasConverged(rvHistory)) return { text:'Converged', cls:'rv-status-good' };
+  return { text:'Oscillating / settling', cls:'rv-status-warn' };
+}
+function rvUpdateOutputs(){
+  const plotEl = document.getElementById('rvPlot'); if(plotEl) plotEl.innerHTML = rvPlotSvg();
+  const trackEl = document.getElementById('rvTrack'); if(trackEl) trackEl.innerHTML = rvTrackSvg();
+  const st = rvStatus();
+  const readoutEl = document.getElementById('rvReadout');
+  if(readoutEl) readoutEl.innerHTML =
+    `<b>Tick:</b> ${rvTick} &nbsp; <b>Lateral offset:</b> ${rvY.toFixed(2)} &nbsp; <b>Heading:</b> ${rvTheta.toFixed(3)}<br>
+     <b>Kp:</b> ${rvKp} &nbsp; <b>Kd:</b> ${rvKd} &nbsp; <b>Status:</b> <span class="${st.cls}">${st.text}</span>`;
+}
+function renderRoverSim(){
+  document.getElementById('toolWrap').innerHTML = `
+    <h3 style="color:var(--accent);margin-top:0">Line-Following Control Loop Simulator</h3>
+    <p style="color:var(--muted);font-size:13px">A real discrete PD control loop — the exact model in
+       <code>exercises/line_follow_control.py</code>. The green dot is the rover's lateral position on
+       the track; the plot below is that same offset over time.</p>
+    <div class="rv-section">
+      <div class="rv-plot" id="rvTrack"></div>
+      <div class="rv-plot" id="rvPlot" style="margin-top:8px"></div>
+      <div class="rv-row">
+        <label>Kp <input type="number" id="rvKpInput" value="${rvKp}" step="0.05" min="0"></label>
+        <label>Kd <input type="number" id="rvKdInput" value="${rvKd}" step="0.05" min="0"></label>
+        <label>Start offset <input type="number" id="rvY0Input" value="${rvY0}" step="0.5"></label>
+      </div>
+      <div class="rv-row">
+        <button class="ghost" id="rvStepBtn">Advance 1 tick</button>
+        <button class="ghost" id="rvRunBtn">Run 20 ticks</button>
+        <button class="ghost" id="rvResetBtn">Reset</button>
+        <button class="ghost" id="rvPreset1">Preset: no damping (Kd=0)</button>
+        <button class="ghost" id="rvPreset2">Preset: well damped</button>
+        <button class="ghost" id="rvPreset3">Preset: too aggressive</button>
+      </div>
+      <div class="rv-readout" id="rvReadout"></div>
+    </div>`;
+  rvUpdateOutputs();
+
+  document.getElementById('rvKpInput').addEventListener('input', e => { rvKp = +e.target.value || 0; saveState(); rvUpdateOutputs(); });
+  document.getElementById('rvKdInput').addEventListener('input', e => { rvKd = +e.target.value || 0; saveState(); rvUpdateOutputs(); });
+  document.getElementById('rvY0Input').addEventListener('input', e => { rvY0 = +e.target.value || 0; saveState(); });
+  document.getElementById('rvStepBtn').onclick = () => { rvStep(); saveState(); rvUpdateOutputs(); };
+  document.getElementById('rvRunBtn').onclick = () => { for(let i=0;i<20;i++) rvStep(); saveState(); rvUpdateOutputs(); };
+  document.getElementById('rvResetBtn').onclick = () => { rvReset(rvY0); saveState(); rvUpdateOutputs(); };
+  document.getElementById('rvPreset1').onclick = () => { rvKp=0.15; rvKd=0; rvReset(rvY0); document.getElementById('rvKpInput').value=rvKp; document.getElementById('rvKdInput').value=rvKd; saveState(); rvUpdateOutputs(); };
+  document.getElementById('rvPreset2').onclick = () => { rvKp=0.15; rvKd=0.6; rvReset(rvY0); document.getElementById('rvKpInput').value=rvKp; document.getElementById('rvKdInput').value=rvKd; saveState(); rvUpdateOutputs(); };
+  document.getElementById('rvPreset3').onclick = () => { rvKp=1.2; rvKd=0.6; rvReset(rvY0); document.getElementById('rvKpInput').value=rvKp; document.getElementById('rvKdInput').value=rvKd; saveState(); rvUpdateOutputs(); };
+}
+
+function letterGrade(pct){
+  if(pct === null) return { text:'—', cls:'grade-dash' };
+  if(pct >= 90) return { text:'A', cls:'grade-A' };
+  if(pct >= 80) return { text:'B', cls:'grade-B' };
+  if(pct >= 70) return { text:'C', cls:'grade-C' };
+  if(pct >= 60) return { text:'D', cls:'grade-D' };
+  return { text:'F', cls:'grade-F' };
+}
+function renderReportCard(){
+  const lessonsDone = answered.filter(Boolean).length;
+  const quizPct = QUIZ.length ? Math.round((score / QUIZ.length) * 100) : null;
+  const quizAttempted = done.size > 0;
+  const grade = letterGrade(quizAttempted ? quizPct : null);
+  const overallItems = lessonsDone + (quizAttempted ? 1 : 0);
+  const overallTotal = LESSONS.length + 1;
+  const overallPct = Math.round((overallItems / overallTotal) * 100);
+  const now = new Date();
+  document.getElementById('toolWrap').innerHTML = `
+    <div class="report-card">
+      <h3 style="color:var(--accent);margin-top:0">Report Card</h3>
+      <p style="color:var(--muted);font-size:12px;margin-top:-6px">Robotics Rover &middot; generated ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</p>
+      <div class="report-overall">
+        <span class="big ${grade.cls}">${grade.text}</span>
+        <span style="color:var(--muted);font-size:13px">Final quiz grade${quizAttempted ? '' : ' (not yet taken)'}</span>
+      </div>
+      <h4>Lessons</h4>
+      <div class="report-row"><span>Quick checks completed</span><span class="grade">${lessonsDone} / ${LESSONS.length}</span></div>
+      <h4>Final Quiz</h4>
+      <div class="report-row"><span>Score</span><span class="grade">${quizAttempted ? `${score} / ${QUIZ.length} (${quizPct}%)` : 'Not attempted'}</span></div>
+      <h4>Pop Quiz</h4>
+      <div class="report-row"><span>Most recent 5-question run</span><span class="grade">${popLastScore !== null ? `${popLastScore} / ${popLastTotal}` : 'Not attempted'}</span></div>
+      <div class="report-row"><span>Runs completed</span><span class="grade">${popAttemptsCount}</span></div>
+      <h4>Flashcards</h4>
+      <div class="report-row"><span>Terms marked known</span><span class="grade">${fcKnown.size} / ${KEY_TERMS.length}</span></div>
+      <h4>Match Game</h4>
+      <div class="report-row"><span>Best round (fewest attempts)</span><span class="grade">${matchBestAttempts !== null ? matchBestAttempts : 'Not completed'}</span></div>
+      <h4>Overall</h4>
+      <div class="report-row"><span>Lessons + quiz completed</span><span class="grade">${overallItems} / ${overallTotal} (${overallPct}%)</span></div>
+      <button class="ghost" id="printBtn">🖨️ Print / Save as PDF</button>
+      <p style="color:var(--muted);font-size:11px;margin-top:8px">In the print dialog, choose <b>Save as PDF</b> and
+         save it into this project's <code>docs/</code> folder to keep a dated record.</p>
+    </div>`;
+  document.getElementById('printBtn').onclick = () => window.print();
+}
+
+document.getElementById('pills').addEventListener('click', e => {
+  const p = e.target.closest('.pill'); if(!p) return; idx = +p.dataset.i; render();
+});
+document.getElementById('prev').onclick = () => { if(idx>0){ idx--; render(); } };
+document.getElementById('next').onclick = () => { if(idx<LESSONS.length){ idx++; render(); } };
+render();
+</script>
+</body></html>
